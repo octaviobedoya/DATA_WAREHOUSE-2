@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Warehouse - BDTemuColombia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-block {
+            background-color: #1E293B; /* slate-800 */
+            color: #F1F5F9; /* slate-100 */
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        .code-block-light {
+            background-color: #F1F5F9; /* slate-100 */
+            color: #1E293B; /* slate-800 */
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        
+        /* === Estilos para el Diagrama Interactivo === */
+        .diagram-container {
+            position: relative;
+            width: 100%;
+            min-height: 850px;
+            background-color: #334155; /* slate-700 */
+            padding: 2rem;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            cursor: grab;
+        }
+        .db-table {
+            position: absolute;
+            background-color: #0F172A; /* slate-900 */
+            border: 1px solid #475569; /* slate-600 */
+            border-radius: 0.5rem;
+            padding: 1rem;
+            width: 230px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            text-align: left;
+            z-index: 10;
+            cursor: move;
+            user-select: none;
+        }
+        .db-table.dragging {
+            box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        .db-table h4 {
+            font-weight: bold;
+            color: #38bdf8; /* sky-400 */
+            border-bottom: 2px solid #38bdf8;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .db-table ul {
+            list-style: none; padding: 0; margin: 0;
+            color: #cbd5e1; /* slate-300 */
+            font-size: 0.85rem;
+        }
+        .db-table ul li { padding: 4px 0; }
+        #svg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none; /* Allows clicks to pass through */
+        }
+        .connector-line {
+            stroke: #94a3b8; /* slate-400 */
+            stroke-width: 2;
+        }
+        .cardinality {
+            position: absolute;
+            color: #f1f5f9;
+            font-size: 1.2rem;
+            font-family: monospace;
+            background-color: #334155;
+            padding: 0 5px;
+            z-index: 5;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-300">
+
+    <div class="max-w-4xl mx-auto p-4 md:p-8">
+
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Data Warehouse para BDTemuColombia</h1>
+            <p class="text-lg text-cyan-400">Análisis de Inteligencia de Negocios</p>
+        </header>
+
+        <!-- Sección: ¿Qué es un Data Warehouse? -->
+        <section id="intro" class="mb-16">
+            <h2 class="text-3xl font-bold text-white mb-4 border-l-4 border-cyan-400 pl-4">¿Qué es un Data Warehouse?</h2>
+            <div class="bg-slate-800 p-6 rounded-lg shadow-lg space-y-4">
+                <p>Un <strong>Data Warehouse (DW)</strong> es una base de datos centralizada y optimizada para el análisis y la consulta de grandes volúmenes de datos históricos. A diferencia de una base de datos transaccional (OLTP), que está diseñada para registrar operaciones del día a día (como una venta o un registro de cliente), un DW se estructura para responder preguntas de negocio complejas de manera rápida y eficiente.</p>
+                <p>El objetivo principal es convertir datos crudos en información útil para la toma de decisiones estratégicas.</p>
+            </div>
+        </section>
+
+        <!-- Sección: Modelo Estrella Interactivo -->
+        <section id="modelo" class="mb-16">
+            <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-cyan-400 pl-4">Modelo Propuesto: Esquema Estrella (Interactivo)</h2>
+             <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                <p class="mb-6">Para este proyecto, utilizamos un <strong>Modelo de Estrella</strong>. En el siguiente diagrama, puedes arrastrar y mover las tablas para organizarlas a tu gusto. Las líneas de conexión y los indicadores de relación se ajustarán automáticamente.</p>
+                
+                <div id="diagram-container" class="diagram-container">
+                    <svg id="svg-container"></svg>
+                    
+                    <!-- Cardinality symbols -->
+                    <div id="card-tiempo-1" class="cardinality">1</div>
+                    <div id="card-tiempo-many" class="cardinality">∞</div>
+                    <div id="card-producto-1" class="cardinality">1</div>
+                    <div id="card-producto-many" class="cardinality">∞</div>
+                    <div id="card-cliente-1" class="cardinality">1</div>
+                    <div id="card-cliente-many" class="cardinality">∞</div>
+                    <div id="card-empleado-1" class="cardinality">1</div>
+                    <div id="card-empleado-many" class="cardinality">∞</div>
+
+                    <!-- Tablas de Dimensiones y Hechos -->
+                    <div id="table-fact" class="db-table">
+                        <h4>dw_factVentas</h4>
+                        <ul>
+                            <li><span class="text-yellow-400 font-bold mr-2">PK</span>id_venta</li>
+                            <li><span class="text-yellow-400 font-bold mr-2">PK</span>id_producto</li>
+                            <li><span class="text-cyan-400 font-bold mr-2">FK</span>id_tiempo</li>
+                            <li><span class="text-cyan-400 font-bold mr-2">FK</span>id_cliente</li>
+                            <li><span class="text-cyan-400 font-bold mr-2">FK</span>id_empleado</li>
+                            <li>cantidad</li>
+                            <li>total</li>
+                        </ul>
+                    </div>
+                    <div id="table-dim-tiempo" class="db-table">
+                        <h4>dw_dimTiempo</h4>
+                        <ul>
+                            <li><span class="text-yellow-400 font-bold mr-2">PK</span>id_tiempo</li>
+                            <li>fecha</li>
+                            <li>anio</li>
+                            <li>mes</li>
+                            <li>dia</li>
+                            <li>trimestre</li>
+                        </ul>
+                    </div>
+                    <div id="table-dim-producto" class="db-table">
+                        <h4>dw_dimProducto</h4>
+                        <ul>
+                            <li><span class="text-yellow-400 font-bold mr-2">PK</span>id_producto</li>
+                            <li>nombre</li>
+                            <li>categoria</li>
+                        </ul>
+                    </div>
+                    <div id="table-dim-cliente" class="db-table">
+                        <h4>dw_dimCliente</h4>
+                        <ul>
+                            <li><span class="text-yellow-400 font-bold mr-2">PK</span>id_cliente</li>
+                            <li>nombre</li>
+                            <li>email</li>
+                            <li>direccion</li>
+                        </ul>
+                    </div>
+                    <div id="table-dim-empleado" class="db-table">
+                         <h4>dw_dimEmpleado</h4>
+                        <ul>
+                            <li><span class="text-yellow-400 font-bold mr-2">PK</span>id_empleado</li>
+                            <li>nombre</li>
+                            <li>puesto</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Sección: Tablas de Dimensiones -->
+        <section id="dimensiones" class="mb-16">
+            <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-cyan-400 pl-4">Tablas de Dimensiones</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold text-white mb-3">Dimensión Producto</h3>
+                    <p class="mb-4">Describe los productos vendidos.</p>
+                    <div class="code-block-light"><pre><code class="language-sql">CREATE TABLE dw_dimProducto (
+    id_producto BIGINT PRIMARY KEY,
+    nombre NVARCHAR(MAX),
+    categoria NVARCHAR(MAX)
+);</code></pre></div>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold text-white mb-3">Dimensión Cliente</h3>
+                    <p class="mb-4">Contiene la información de los clientes.</p>
+                     <div class="code-block-light"><pre><code class="language-sql">CREATE TABLE dw_dimCliente (
+    id_cliente BIGINT PRIMARY KEY,
+    nombre NVARCHAR(MAX),
+    email NVARCHAR(MAX),
+    direccion NVARCHAR(MAX)
+);</code></pre></div>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold text-white mb-3">Dimensión Empleado</h3>
+                    <p class="mb-4">Almacena los datos de los empleados.</p>
+                     <div class="code-block-light"><pre><code class="language-sql">CREATE TABLE dw_dimEmpleado (
+    id_empleado BIGINT PRIMARY KEY,
+    nombre NVARCHAR(MAX),
+    puesto NVARCHAR(MAX)
+);</code></pre></div>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold text-white mb-3">Dimensión Tiempo</h3>
+                    <p class="mb-4">Descompone la fecha para análisis temporal.</p>
+                     <div class="code-block-light"><pre><code class="language-sql">CREATE TABLE dw_dimTiempo (
+    id_tiempo INT PRIMARY KEY,
+    fecha DATE,
+    anio INT,
+    mes INT,
+    dia INT,
+    trimestre INT
+);</code></pre></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección: Tabla de Hechos -->
+        <section id="hechos" class="mb-16">
+             <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-cyan-400 pl-4">Tabla de Hechos</h2>
+             <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                 <h3 class="text-2xl font-semibold text-white mb-3">Hechos de Ventas (FactVentas)</h3>
+                 <p class="mb-4">Es el corazón de nuestro modelo. Conecta todas las dimensiones y almacena las métricas clave de cada venta a nivel de producto.</p>
+                 <div class="code-block-light"><pre><code class="language-sql">CREATE TABLE dw_factVentas (
+    id_venta BIGINT,
+    id_tiempo INT,
+    id_producto BIGINT,
+    id_cliente BIGINT,
+    id_empleado BIGINT,
+    cantidad INT,
+    total DECIMAL(18, 2),
+    PRIMARY KEY (id_venta, id_producto),
+    FOREIGN KEY(id_tiempo) REFERENCES dw_dimTiempo(id_tiempo),
+    FOREIGN KEY(id_producto) REFERENCES dw_dimProducto(id_producto),
+    FOREIGN KEY(id_cliente) REFERENCES dw_dimCliente(id_cliente),
+    FOREIGN KEY(id_empleado) REFERENCES dw_dimEmpleado(id_empleado)
+);</code></pre></div>
+            </div>
+        </section>
+
+        <!-- Sección: Proceso ETL -->
+        <section id="etl" class="mb-16">
+            <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-cyan-400 pl-4">Proceso ETL (Extract, Transform, Load)</h2>
+            <div class="bg-slate-800 p-6 rounded-lg shadow-lg">
+                <p class="mb-4">Para poblar el Data Warehouse, se ejecuta un proceso ETL. Este proceso extrae datos de la base transaccional, los transforma para que coincidan con el modelo estrella y los carga en el DW. Hemos creado un procedimiento almacenado para automatizar esta tarea.</p>
+                <div class="code-block"><pre><code class="language-sql">CREATE OR ALTER PROCEDURE ETL_CargarDataWarehouse
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Cargar Dimensiones (Incremental)
+    INSERT INTO dw_dimProducto (id_producto, nombre, categoria)
+    SELECT id, nombre, categoria FROM Productos P
+    WHERE NOT EXISTS (SELECT 1 FROM dw_dimProducto D WHERE D.id_producto = P.id);
+    
+    INSERT INTO dw_dimCliente (id_cliente, nombre, email, direccion)
+    SELECT id, nombre, email, direccion FROM Clientes C
+    WHERE NOT EXISTS (SELECT 1 FROM dw_dimCliente D WHERE D.id_cliente = C.id);
+
+    INSERT INTO dw_dimEmpleado (id_empleado, nombre, puesto)
+    SELECT id, nombre, puesto FROM Empleados E
+    WHERE NOT EXISTS (SELECT 1 FROM dw_dimEmpleado D WHERE D.id_empleado = E.id);
+
+    INSERT INTO dw_dimTiempo (id_tiempo, fecha, anio, mes, dia, trimestre)
+    SELECT DISTINCT
+        CAST(FORMAT(V.fecha, 'yyyyMMdd') AS INT), CAST(V.fecha AS DATE),
+        YEAR(V.fecha), MONTH(V.fecha), DAY(V.fecha), DATEPART(QUARTER, V.fecha)
+    FROM Ventas V
+    WHERE NOT EXISTS (
+        SELECT 1 FROM dw_dimTiempo T WHERE T.id_tiempo = CAST(FORMAT(V.fecha, 'yyyyMMdd') AS INT)
+    );
+
+    -- Cargar Tabla de Hechos (Incremental)
+    INSERT INTO dw_factVentas (id_venta, id_tiempo, id_cliente, id_empleado, id_producto, cantidad, total)
+    SELECT
+        V.id, CAST(FORMAT(V.fecha, 'yyyyMMdd') AS INT), V.cliente_id,
+        V.empleado_id, DV.producto_id, DV.cantidad, (DV.cantidad * DV.precio_unitario)
+    FROM Ventas V
+    JOIN DetalleVentas DV ON V.id = DV.venta_id
+    WHERE NOT EXISTS (
+        SELECT 1 FROM dw_factVentas F WHERE F.id_venta = V.id AND F.id_producto = DV.producto_id
+    );
+
+    PRINT 'Proceso ETL completado.';
+END;
+GO</code></pre></div>
+            </div>
+        </section>
+
+        <!-- Sección: Consultas de ejemplo -->
+        <section id="queries" class="mb-16">
+            <h2 class="text-3xl font-bold text-white mb-6 border-l-4 border-cyan-400 pl-4">Análisis y Consultas de Negocio</h2>
+            <div class="bg-slate-800 p-6 rounded-lg shadow-lg space-y-8">
+                <div>
+                    <h3 class="text-xl font-semibold text-cyan-400 mb-2">1. Ventas Totales por Categoría de Producto</h3>
+                    <p class="mb-3">Permite identificar qué categorías de productos son las más rentables.</p>
+                    <div class="code-block"><pre><code class="language-sql">SELECT
+    P.categoria,
+    SUM(F.total) AS TotalVentas
+FROM dw_factVentas F
+JOIN dw_dimProducto P ON F.id_producto = P.id_producto
+GROUP BY P.categoria
+ORDER BY TotalVentas DESC;</code></pre></div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-cyan-400 mb-2">2. Top 10 Productos Más Vendidos</h3>
+                    <p class="mb-3">Muestra cuáles son los productos estrella en términos de unidades vendidas.</p>
+                     <div class="code-block"><pre><code class="language-sql">SELECT TOP 10
+    P.nombre,
+    SUM(F.cantidad) AS UnidadesVendidas,
+    SUM(F.total) AS IngresoTotal
+FROM dw_factVentas F
+JOIN dw_dimProducto P ON F.id_producto = P.id_producto
+GROUP BY P.nombre
+ORDER BY UnidadesVendidas DESC;</code></pre></div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold text-cyan-400 mb-2">3. Ventas por Mes y Año</h3>
+                    <p class="mb-3">Ayuda a identificar tendencias y estacionalidad en las ventas.</p>
+                     <div class="code-block"><pre><code class="language-sql">SELECT
+    T.anio,
+    T.mes,
+    SUM(F.total) AS TotalVentas
+FROM dw_factVentas F
+JOIN dw_dimTiempo T ON F.id_tiempo = T.id_tiempo
+GROUP BY T.anio, T.mes
+ORDER BY T.anio, T.mes;</code></pre></div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer class="text-center pt-8 mt-8 border-t border-slate-700">
+            <p>&copy; 2024 Proyecto Data Warehouse TemuColombia. Creado con asistencia de IA.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('diagram-container');
+            const svgContainer = document.getElementById('svg-container');
+            const factTable = document.getElementById('table-fact');
+
+            const dims = [
+                { 
+                    table: document.getElementById('table-dim-tiempo'), 
+                    one: document.getElementById('card-tiempo-1'),
+                    many: document.getElementById('card-tiempo-many')
+                },
+                { 
+                    table: document.getElementById('table-dim-producto'), 
+                    one: document.getElementById('card-producto-1'),
+                    many: document.getElementById('card-producto-many')
+                },
+                { 
+                    table: document.getElementById('table-dim-cliente'), 
+                    one: document.getElementById('card-cliente-1'),
+                    many: document.getElementById('card-cliente-many')
+                },
+                { 
+                    table: document.getElementById('table-dim-empleado'), 
+                    one: document.getElementById('card-empleado-1'),
+                    many: document.getElementById('card-empleado-many')
+                }
+            ];
+
+            const allTables = [factTable, ...dims.map(d => d.table)];
+            let lines = [];
+
+            function initializePositions() {
+                const containerWidth = container.offsetWidth;
+                const containerHeight = container.offsetHeight;
+                
+                factTable.style.left = `${containerWidth / 2 - factTable.offsetWidth / 2}px`;
+                factTable.style.top = `${containerHeight / 2 - factTable.offsetHeight / 2}px`;
+                dims[0].table.style.left = `${containerWidth / 2 - dims[0].table.offsetWidth / 2}px`;
+                dims[0].table.style.top = `20px`;
+                dims[1].table.style.left = `20px`;
+                dims[1].table.style.top = `${containerHeight / 2 - dims[1].table.offsetHeight / 2}px`;
+                dims[2].table.style.left = `${containerWidth - dims[2].table.offsetWidth - 20}px`;
+                dims[2].table.style.top = `${containerHeight / 2 - dims[2].table.offsetHeight / 2}px`;
+                dims[3].table.style.left = `${containerWidth / 2 - dims[3].table.offsetWidth / 2}px`;
+                dims[3].table.style.top = `${containerHeight - dims[3].table.offsetHeight - 20}px`;
+            }
+
+            function createLines() {
+                svgContainer.innerHTML = '';
+                lines = [];
+                dims.forEach(() => {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('class', 'connector-line');
+                    svgContainer.appendChild(line);
+                    lines.push(line);
+                });
+            }
+
+            function updateDiagram() {
+                const factCenter = {
+                    x: factTable.offsetLeft + factTable.offsetWidth / 2,
+                    y: factTable.offsetTop + factTable.offsetHeight / 2,
+                };
+
+                dims.forEach((dim, i) => {
+                    const dimCenter = {
+                        x: dim.table.offsetLeft + dim.table.offsetWidth / 2,
+                        y: dim.table.offsetTop + dim.table.offsetHeight / 2
+                    };
+                    lines[i].setAttribute('x1', factCenter.x);
+                    lines[i].setAttribute('y1', factCenter.y);
+                    lines[i].setAttribute('x2', dimCenter.x);
+                    lines[i].setAttribute('y2', dimCenter.y);
+
+                    // Update cardinality positions
+                    const tOne = 0.25; // 25% along the line from the dimension table
+                    const tMany = 0.75; // 75% along the line
+                    
+                    const oneX = dimCenter.x + tOne * (factCenter.x - dimCenter.x);
+                    const oneY = dimCenter.y + tOne * (factCenter.y - dimCenter.y);
+                    const manyX = dimCenter.x + tMany * (factCenter.x - dimCenter.x);
+                    const manyY = dimCenter.y + tMany * (factCenter.y - dimCenter.y);
+
+                    dim.one.style.left = `${oneX - dim.one.offsetWidth / 2}px`;
+                    dim.one.style.top = `${oneY - dim.one.offsetHeight / 2}px`;
+                    dim.many.style.left = `${manyX - dim.many.offsetWidth / 2}px`;
+                    dim.many.style.top = `${manyY - dim.many.offsetHeight / 2}px`;
+                });
+            }
+
+            function makeDraggable(element) {
+                let isDragging = false;
+                let dragOffsetX, dragOffsetY;
+
+                function onDragStart(e) {
+                    isDragging = true;
+                    element.classList.add('dragging');
+                    const clientX = e.clientX || e.touches[0].clientX;
+                    const clientY = e.clientY || e.touches[0].clientY;
+                    dragOffsetX = clientX - element.offsetLeft;
+                    dragOffsetY = clientY - element.offsetTop;
+                    document.addEventListener('mousemove', onDragMove);
+                    document.addEventListener('touchmove', onDragMove, { passive: false });
+                    document.addEventListener('mouseup', onDragEnd);
+                    document.addEventListener('touchend', onDragEnd);
+                }
+
+                function onDragMove(e) {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    const clientX = e.clientX || e.touches[0].clientX;
+                    const clientY = e.clientY || e.touches[0].clientY;
+                    let newX = clientX - dragOffsetX;
+                    let newY = clientY - dragOffsetY;
+                    newX = Math.max(0, Math.min(newX, container.offsetWidth - element.offsetWidth));
+                    newY = Math.max(0, Math.min(newY, container.offsetHeight - element.offsetHeight));
+                    element.style.left = `${newX}px`;
+                    element.style.top = `${newY}px`;
+                    updateDiagram();
+                }
+
+                function onDragEnd() {
+                    isDragging = false;
+                    element.classList.remove('dragging');
+                    document.removeEventListener('mousemove', onDragMove);
+                    document.removeEventListener('touchmove', onDragMove);
+                    document.removeEventListener('mouseup', onDragEnd);
+                    document.removeEventListener('touchend', onDragEnd);
+                }
+                
+                element.addEventListener('mousedown', onDragStart);
+                element.addEventListener('touchstart', onDragStart);
+            }
+
+            allTables.forEach(makeDraggable);
+            
+            initializePositions();
+            createLines();
+            updateDiagram();
+            
+            window.addEventListener('resize', () => {
+                // For simplicity, we can re-initialize positions on resize
+                initializePositions();
+                updateDiagram();
+            });
+        });
+    </script>
+</body>
+</html>
